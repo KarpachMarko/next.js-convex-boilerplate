@@ -1,8 +1,17 @@
+"use client";
+
 import Image from "next/image";
+import {useMutation, useQuery} from "convex/react";
+import {api} from "@/convex/_generated/api";
 
 export default function Home() {
+
+  const tasks = useQuery(api.tasks.get)
+  const setStatus = useMutation(api.tasks.setStatus)
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
+    <div
+      className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
         <Image
           className="dark:invert"
@@ -12,10 +21,12 @@ export default function Home() {
           height={38}
           priority
         />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
+        <ol
+          className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
           <li className="mb-2 tracking-[-.01em]">
             Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
+            <code
+              className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
               app/page.tsx
             </code>
             .
@@ -24,6 +35,24 @@ export default function Home() {
             Save and see your changes instantly.
           </li>
         </ol>
+
+        <div>
+          <h2>Todo</h2>
+          <ol
+            className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
+            {tasks?.map(({_id, text, isCompleted}) =>
+              <li key={_id} className="mb-2 tracking-[-.01em]">
+                <span>{text}</span>
+                <input type="checkbox" checked={isCompleted}
+                       onChange={async e => {
+                         const newStatus = e.currentTarget.checked;
+                         console.log("setting status to ", newStatus);
+                         await setStatus({id: _id, isCompleted: newStatus});
+                       }}/>
+              </li>
+            )}
+          </ol>
+        </div>
 
         <div className="flex gap-4 items-center flex-col sm:flex-row">
           <a
