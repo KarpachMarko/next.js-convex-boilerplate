@@ -3,11 +3,14 @@
 import Image from "next/image";
 import {useMutation, useQuery} from "convex/react";
 import {api} from "@/convex/_generated/api";
+import {TodoList} from "@/app/TodoList";
 
 export default function Home() {
 
-  const tasks = useQuery(api.tasks.get)
+  const tasks = useQuery(api.tasks.get) ?? []
   const setStatus = useMutation(api.tasks.setStatus)
+  const addTask = useMutation(api.tasks.insert)
+  const removeTask = useMutation(api.tasks.remove)
 
   return (
     <div
@@ -21,38 +24,12 @@ export default function Home() {
           height={38}
           priority
         />
-        <ol
-          className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code
-              className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
 
-        <div>
-          <h2>Todo</h2>
-          <ol
-            className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-            {tasks?.map(({_id, text, isCompleted}) =>
-              <li key={_id} className="mb-2 tracking-[-.01em]">
-                <span>{text}</span>
-                <input type="checkbox" checked={isCompleted}
-                       onChange={async e => {
-                         const newStatus = e.currentTarget.checked;
-                         console.log("setting status to ", newStatus);
-                         await setStatus({id: _id, isCompleted: newStatus});
-                       }}/>
-              </li>
-            )}
-          </ol>
-        </div>
+        <TodoList tasks={tasks}
+                  setStatus={setStatus}
+                  addTask={addTask}
+                  deleteTask={removeTask}
+        />
 
         <div className="flex gap-4 items-center flex-col sm:flex-row">
           <a
