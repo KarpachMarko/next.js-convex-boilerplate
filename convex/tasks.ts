@@ -1,6 +1,6 @@
 import {mutation, query,} from "@/convex/_generated/server";
 import {v} from "convex/values";
-import {Task} from "@/app/model/taskModel";
+import {Task} from "@/types/taskModel";
 
 const TasksTable = "tasks";
 

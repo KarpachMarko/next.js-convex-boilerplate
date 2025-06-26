@@ -1,20 +1,33 @@
-"use client";
-
 import Image from "next/image";
-import {useMutation, useQuery} from "convex/react";
-import {api} from "@/convex/_generated/api";
-import {TodoList} from "@/components/TodoList";
+import {getSignInUrl, getSignUpUrl, signOut, withAuth} from "@workos-inc/authkit-nextjs";
+import {TodoListSection} from "@/containers/home-page/todo-list-section";
+import Link from "next/link";
+import {Button} from "@/components/ui/button";
 
-export default function Home() {
+export default async function Home() {
 
-  const tasks = useQuery(api.tasks.get) ?? []
-  const setStatus = useMutation(api.tasks.setStatus)
-  const addTask = useMutation(api.tasks.insert)
-  const removeTask = useMutation(api.tasks.remove)
+  const {user} = await withAuth();
+  const signInUrl = await getSignInUrl();
+  const signUpUrl = await getSignUpUrl();
 
   return (
     <div
       className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
+      <header className="flex items-center justify-end w-full gap-2">
+        {user ?
+          <>
+            <p>Welcome back, {user.firstName}</p>
+            <Button onClick={async () => {
+              "use server";
+              await signOut();
+            }} className="cursor-pointer">Logout</Button>
+          </>
+          : <>
+            <Link href={signUpUrl}><Button className="cursor-pointer">Register</Button></Link>
+            <Link href={signInUrl}><Button className="cursor-pointer" variant="secondary">Log In</Button></Link>
+          </>
+        }
+      </header>
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
         <Image
           className="dark:invert"
@@ -25,11 +38,7 @@ export default function Home() {
           priority
         />
 
-        <TodoList tasks={tasks}
-                  setStatus={setStatus}
-                  addTask={addTask}
-                  deleteTask={removeTask}
-        />
+        <TodoListSection/>
 
       </main>
     </div>

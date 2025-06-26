@@ -1,6 +1,6 @@
 /* eslint-disable */
 /**
- * Generated data model types.
+ * Generated data types types.
  *
  * THIS CODE IS AUTOMATICALLY GENERATED.
  *
@@ -47,7 +47,7 @@ export type Id<TableName extends TableNames = TableNames> =
   GenericId<TableName>;
 
 /**
- * A type describing your Convex data model.
+ * A type describing your Convex data types.
  *
  * This type includes information about what tables you have, the type of
  * documents stored in those tables, and the indexes defined on them.

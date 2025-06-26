@@ -1,4 +1,6 @@
-import {Task, TaskRegistrationRequest} from "@/app/model/taskModel";
+"use client";
+
+import {Task, TaskRegistrationRequest} from "@/types/taskModel";
 import {Id} from "@/convex/_generated/dataModel";
 import {useMemo, useState} from "react";
 import {Input} from "@/components/ui/input";
