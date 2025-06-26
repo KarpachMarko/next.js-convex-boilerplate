@@ -3,6 +3,7 @@ import {getSignInUrl, getSignUpUrl, signOut, withAuth} from "@workos-inc/authkit
 import {TodoListSection} from "@/containers/home-page/todo-list-section";
 import Link from "next/link";
 import {Button} from "@/components/ui/button";
+import {ThemeToggle} from "@/components/ui/theme-toggle";
 
 export default async function Home() {
 
@@ -27,6 +28,7 @@ export default async function Home() {
             <Link href={signInUrl}><Button className="cursor-pointer" variant="secondary">Log In</Button></Link>
           </>
         }
+        <ThemeToggle/>
       </header>
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
         <Image

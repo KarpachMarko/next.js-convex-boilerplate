@@ -2,7 +2,7 @@
 
 import {useMutation, useQuery} from "convex/react";
 import {api} from "@/convex/_generated/api";
-import {TodoList} from "@/components/TodoList";
+import {TodoList} from "@/components/ui/todo-list";
 
 export const TodoListSection = () => {
   const tasks = useQuery(api.tasks.get) ?? []
