@@ -1,4 +1,4 @@
-import DefaultLayout from "@/components/default-content-layout";
+import DefaultLayout from "@/components/default-content-layout"
 
 export default function Drivers() {
   return (

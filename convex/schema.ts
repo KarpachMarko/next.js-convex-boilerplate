@@ -1,6 +1,5 @@
-import {defineSchema, defineTable} from "convex/server";
-import {v} from "convex/values";
-
+import { defineSchema, defineTable } from "convex/server"
+import { v } from "convex/values"
 
 export default defineSchema({
   tasks: defineTable({
@@ -38,4 +37,4 @@ export default defineSchema({
   })
     .index("by_role_id", ["roleId"])
     .index("by_permission_id", ["permissionId"]),
-});
+})
