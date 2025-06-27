@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type {Metadata} from "next";
+import {Geist, Geist_Mono} from "next/font/google";
 import "./globals.css";
 import {ConvexClientProvider} from "@/components/convex-client-provider";
 import {AuthKitProvider} from "@workos-inc/authkit-nextjs/components";
-import { ThemeProvider } from "@/components/theme-provider";
+import {ThemeProvider} from "@/components/theme-provider";
+import {ProfileProvider} from "@/components/profile-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,26 +22,30 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({
-  children,
-}: Readonly<{
+                                     children,
+                                   }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-      <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-        <AuthKitProvider>
-          <ConvexClientProvider>{children}</ConvexClientProvider>
-        </AuthKitProvider>
-      </ThemeProvider>
-      </body>
+    <body
+      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+    >
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
+      <AuthKitProvider>
+        <ConvexClientProvider>
+          <ProfileProvider>
+            {children}
+          </ProfileProvider>
+        </ConvexClientProvider>
+      </AuthKitProvider>
+    </ThemeProvider>
+    </body>
     </html>
   );
 }
