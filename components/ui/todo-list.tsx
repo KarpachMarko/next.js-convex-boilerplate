@@ -43,7 +43,7 @@ export function TodoList(props: {
         {props.tasks?.map(({_id, text, isCompleted}, i) =>
             <TableRow key={_id}>
               <TableCell className="font-medium">{i + 1}.</TableCell>
-              <TableCell>{text}</TableCell>
+              <TableCell className={isCompleted ? "line-through" : ""}>{text}</TableCell>
               <TableCell>
                 <Checkbox
                   checked={isCompleted}
@@ -63,7 +63,13 @@ export function TodoList(props: {
 
     <div className="flex gap-2 mt-2">
       <Input type="text" value={newTask} placeholder={"Task for today..."}
-             onChange={e => setNewTask(e.currentTarget.value)}/>
+             onChange={e => setNewTask(e.currentTarget.value)}
+             onKeyDown={async e => {
+               if (e.key === "Enter") {
+                 await addTask();
+               }
+             }}
+      />
       <Button className="cursor-pointer" disabled={!isValid}
               onClick={addTask}>Add Task
       </Button>
