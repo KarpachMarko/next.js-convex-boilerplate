@@ -11,8 +11,7 @@ import { isUnauthenticatedConvexError } from "@/types/errors/unauthenticatedErro
 
 export const TodoListSection = () => {
   const { profile } = useProfile()
-  const { data: tasks, isLoading, error } = useConvexQuery(api.tasks.get,
-    { profileId: profile?._id })
+  const { data: tasks, isLoading, error } = useConvexQuery(api.tasks.get, profile ? { profileId: profile._id } : "skip")
 
   const setStatus = useAuthedConvexMutation(api.tasks.setStatus)
 

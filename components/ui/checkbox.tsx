@@ -2,14 +2,15 @@
 
 import * as React from "react"
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
-import { CheckIcon } from "lucide-react"
+import { CheckIcon, Loader2Icon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
 function Checkbox({
   className,
+  loading = false,
   ...props
-}: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
+}: React.ComponentProps<typeof CheckboxPrimitive.Root> & { loading?: boolean }) {
   return (
     <CheckboxPrimitive.Root
       data-slot="checkbox"
@@ -19,13 +20,13 @@ function Checkbox({
       )}
       {...props}
     >
-      <CheckboxPrimitive.Indicator
+      {loading ? <Loader2Icon className={"animate-spin size-3.5"}/> : <CheckboxPrimitive.Indicator
         data-slot="checkbox-indicator"
         className="flex items-center justify-center text-current transition-none"
       >
         <CheckIcon className="size-3.5"/>
       </CheckboxPrimitive.Indicator>
-    </CheckboxPrimitive.Root>
+      }    </CheckboxPrimitive.Root>
   )
 }
 

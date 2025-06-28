@@ -1,5 +1,5 @@
-import { useQuery } from "convex/react"
-import { FunctionReference, OptionalRestArgs } from "convex/server"
+import { OptionalRestArgsOrSkip, useQuery } from "convex/react"
+import { FunctionReference } from "convex/server"
 
 type ConvexErrorResult<T> = {
   data: null;
@@ -15,7 +15,7 @@ type ConvexSuccessResult<T> = {
 
 export function useConvexQuery<
   Query extends FunctionReference<"query">,
-  Args extends OptionalRestArgs<Query>
+  Args extends OptionalRestArgsOrSkip<Query>
 >(
   query: Query,
   ...args: Args

@@ -6,23 +6,97 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ConvexMutationResult } from "@/hooks/useConvexMutation"
-import { AnyFieldApi, useForm } from "@tanstack/react-form"
 import { Loader2Icon } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { isUnauthorizedPermissionConvexError } from "@/types/errors/unauthorizedPermissionError"
 import { toast } from "sonner"
 import { isUnauthenticatedConvexError } from "@/types/errors/unauthenticatedError"
 import { isValidationError } from "@/types/errors/validationError"
+import { useAppForm } from "@/form/form-context"
+import { useCallback, useState } from "react"
 
-function FieldInfo({ field }: { field: AnyFieldApi }) {
+function TodoListRow({ rowNum, task, canEdit, setStatus, deleteTask }: {
+  rowNum: number,
+  task: Task,
+  canEdit: boolean,
+  setStatus: ({}: { id: Id<"tasks">, isCompleted: boolean }) => Promise<ConvexMutationResult<void>>,
+  deleteTask: ({}: {
+    id: Id<"tasks">
+  }) => Promise<ConvexMutationResult<void>>
+}) {
+  const [changeStatusLoading, setChangeStatusLoading] = useState(false)
+  const runChangeStatus = useCallback(async (id: Id<"tasks">, isCompleted: boolean) => {
+    setChangeStatusLoading(true)
+    const { error } = await setStatus({ id, isCompleted })
+    setChangeStatusLoading(false)
+    if (error) {
+      const defaultErrorMessage = "Failed change status"
+      if (isUnauthenticatedConvexError(error)) {
+        toast(defaultErrorMessage, {
+          description: "Unauthenticated"
+        })
+        return
+      }
+      if (isUnauthorizedPermissionConvexError(error)) {
+        toast(defaultErrorMessage, {
+          description: <p>You do not have required
+            permission: <strong>{error.data.requiredPermission}</strong></p>
+        })
+        return
+      }
+      toast(defaultErrorMessage)
+    }
+  }, [setStatus, setChangeStatusLoading])
+
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const runDeleteTask = useCallback(async (id: Id<"tasks">) => {
+    setDeleteLoading(true)
+    const { error } = await deleteTask({ id })
+    setDeleteLoading(false)
+    if (error) {
+      const defaultErrorMessage = "Failed delete task"
+      if (isUnauthenticatedConvexError(error)) {
+        toast(defaultErrorMessage, {
+          description: "Unauthenticated"
+        })
+        return
+      }
+      if (isUnauthorizedPermissionConvexError(error)) {
+        toast(defaultErrorMessage, {
+          description: <p>You do not have required
+            permission: <strong>{error.data.requiredPermission}</strong></p>
+        })
+        return
+      }
+      toast(defaultErrorMessage)
+    }
+  }, [deleteTask, setDeleteLoading])
+
   return (
-    <>
-      {field.state.meta.isTouched && !field.state.meta.isValid ? (
-        <em>{field.state.meta.errors.join(", ")}</em>
-      ) : null}
-      {field.state.meta.isValidating ? "Validating..." : null}
-    </>
+    <TableRow>
+      <TableCell className="font-medium">{rowNum}.</TableCell>
+      <TableCell
+        className={task.isCompleted ? "line-through" : ""}>{task.text}</TableCell>
+      <TableCell>
+        <Checkbox
+          loading={changeStatusLoading}
+          disabled={!canEdit}
+          checked={task.isCompleted}
+          onCheckedChange={(checked) => {
+            const newStatus = checked === "indeterminate" ? true : checked
+            void runChangeStatus(task._id, newStatus)
+          }}
+        />
+      </TableCell>
+      <TableCell>
+        {canEdit ?
+          <Button disabled={!canEdit} variant="destructive"
+                  size="sm" className="cursor-pointer text-xs flex items-center"
+                  onClick={() => runDeleteTask(task._id)}>
+            {deleteLoading ? <Loader2Icon className={"animate-spin"}/> : null}
+            Delete
+          </Button> : null}
+      </TableCell>
+    </TableRow>
   )
 }
 
@@ -38,7 +112,7 @@ export function TodoList(props: {
   }) => Promise<ConvexMutationResult<void>>,
 }) {
 
-  const form = useForm({
+  const form = useAppForm({
     defaultValues: {
       taskText: "",
     },
@@ -80,107 +154,36 @@ export function TodoList(props: {
     <Table>
       <TableBody>
         {props.tasks?.map(({ _id, text, isCompleted }, i) =>
-          <TableRow key={_id}>
-            <TableCell className="font-medium">{i + 1}.</TableCell>
-            <TableCell
-              className={isCompleted ? "line-through" : ""}>{text}</TableCell>
-            <TableCell>
-              <Checkbox
-                disabled={!props.canEdit}
-                checked={isCompleted}
-                onCheckedChange={async (checked) => {
-                  const newStatus = checked === "indeterminate" ? true : checked
-                  const { error } = await props.setStatus({ id: _id, isCompleted: newStatus })
-                  if (error) {
-                    const defaultErrorMessage = "Failed change status"
-                    if (isUnauthenticatedConvexError(error)) {
-                      toast(defaultErrorMessage, {
-                        description: "Unauthenticated"
-                      })
-                      return
-                    }
-                    if (isUnauthorizedPermissionConvexError(error)) {
-                      toast(defaultErrorMessage, {
-                        description: <p>You do not have required
-                          permission: <strong>{error.data.requiredPermission}</strong></p>
-                      })
-                      return
-                    }
-                    toast(defaultErrorMessage)
-                  }
-                }}
-              />
-            </TableCell>
-            <TableCell>
-              {props.canEdit ?
-                <Button disabled={!props.canEdit} variant="destructive"
-                        size="sm" className="cursor-pointer text-xs"
-                        onClick={async () => {
-                          const { error } = await props.deleteTask({ id: _id })
-                          if (error) {
-                            const defaultErrorMessage = "Failed delete task"
-                            if (isUnauthenticatedConvexError(error)) {
-                              toast(defaultErrorMessage, {
-                                description: "Unauthenticated"
-                              })
-                              return
-                            }
-                            if (isUnauthorizedPermissionConvexError(error)) {
-                              toast(defaultErrorMessage, {
-                                description: <p>You do not have required
-                                  permission: <strong>{error.data.requiredPermission}</strong></p>
-                              })
-                              return
-                            }
-                            toast(defaultErrorMessage)
-                          }
-                        }}>Delete</Button> : <></>}
-            </TableCell>
-          </TableRow>,
+          <TodoListRow key={_id}
+                       rowNum={i + 1}
+                       task={{ _id, text, isCompleted }}
+                       canEdit={props.canEdit}
+                       setStatus={props.setStatus}
+                       deleteTask={props.deleteTask}/>
         )}
       </TableBody>
     </Table>
 
-    {props.canEdit ? <form onSubmit={(e) => {
-      e.preventDefault()
-      e.stopPropagation()
-      void form.handleSubmit()
-    }} className="flex gap-2 mt-2">
-      <form.Field
-        name="taskText"
-        validators={{
-          onChange: ({ value }) =>
-            !value ? "Task text id required"
-              : value.length < 3
-                ? "Task text should be at leat 3 characters long"
-                : undefined,
-          onBlurAsyncDebounceMs: 500,
-        }}
-        children={(field) => <div className={"w-full flex flex-col"}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Input type="text"
-                     value={field.state.value}
-                     placeholder={"Task for today..."}
-                     className={!field.state.meta.isValid ? "border-red-400" : ""}
-                     onChange={e => field.handleChange(e.target.value)}
-              />
-            </TooltipTrigger>
-            {field.state.meta.isValid ? <></> : <TooltipContent>
-              <FieldInfo field={field}/>
-            </TooltipContent>}
-          </Tooltip>
-        </div>}
-      />
-      <form.Subscribe
-        selector={state => [state.canSubmit, state.isSubmitting]}
-        children={([canSubmit, isSubmitting]) =>
-          <Button type="submit" className="cursor-pointer" disabled={!canSubmit}>
-            {isSubmitting ? <><Loader2Icon className="animate-spin"/>Please wait</>
-              : <>Add Task</>}
-          </Button>
-        }
-      />
-    </form> : <></>}
+    {props.canEdit ? <form.AppForm>
+      <form onSubmit={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        void form.handleSubmit()
+      }} className="flex gap-2 mt-2 items-end">
+        <form.AppField
+          name="taskText"
+          validators={{
+            onChange: ({ value }) =>
+              !value ? "Task text id required"
+                : value.length < 3
+                  ? "Task text should be at leat 3 characters long"
+                  : undefined,
+            onBlurAsyncDebounceMs: 500,
+          }}
+          children={(field) => <field.TextField className={"w-full"} label={"Task text"}/>}
+        />
+        <form.SubmitButton label={"Add task"}/>
+      </form>
+    </form.AppForm> : <></>}
   </div>
 }
