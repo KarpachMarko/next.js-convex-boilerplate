@@ -6,6 +6,7 @@ import { api } from '@/convex/_generated/api'
 import { ConvexError } from 'convex/values'
 import { TodoList } from '@/components/ui/todo-list'
 import { useAuthedConvexMutation } from '@/hooks/useAuthedConvexMutation'
+import { Loader2Icon } from "lucide-react"
 
 export const TodoListSection = () => {
   const { profile } = useProfile()
@@ -21,7 +22,7 @@ export const TodoListSection = () => {
     p => p.slug === 'todo-tasks:write') ?? false
 
   if (isLoading) {
-    return <div>Loading...</div>
+    return <div className="flex items-center"><Loader2Icon className="animate-spin"/>Loading</div>
   }
 
   if (error) {
