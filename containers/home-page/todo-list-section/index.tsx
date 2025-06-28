@@ -1,12 +1,13 @@
-'use client'
+"use client"
 
-import { useProfile } from '@/components/profile-provider'
-import { useConvexQuery } from '@/hooks/useConvexQuery'
-import { api } from '@/convex/_generated/api'
-import { ConvexError } from 'convex/values'
-import { TodoList } from '@/components/ui/todo-list'
-import { useAuthedConvexMutation } from '@/hooks/useAuthedConvexMutation'
+import { useProfile } from "@/components/profile-provider"
+import { useConvexQuery } from "@/hooks/useConvexQuery"
+import { api } from "@/convex/_generated/api"
+import { TodoList } from "@/components/ui/todo-list"
+import { useAuthedConvexMutation } from "@/hooks/useAuthedConvexMutation"
 import { Loader2Icon } from "lucide-react"
+import { isUnauthorizedPermissionConvexError, } from "@/types/errors/unauthorizedPermissionError"
+import { isUnauthenticatedConvexError } from "@/types/errors/unauthenticatedError"
 
 export const TodoListSection = () => {
   const { profile } = useProfile()
@@ -19,18 +20,18 @@ export const TodoListSection = () => {
   const removeTask = useAuthedConvexMutation(api.tasks.remove)
 
   const canEdit = profile?.permissions.some(
-    p => p.slug === 'todo-tasks:write') ?? false
+    p => p.slug === "todo-tasks:write") ?? false
 
   if (isLoading) {
     return <div className="flex items-center"><Loader2Icon className="animate-spin"/>Loading</div>
   }
 
   if (error) {
-    if (error instanceof ConvexError) {
-      const requiredPermission = error.data?.requiredPermission
-      if (requiredPermission != null) {
-        return <div>You do not have permission "{requiredPermission}"</div>
-      }
+    if (isUnauthorizedPermissionConvexError(error)) {
+      return <div>You do not have permission "{error.data.requiredPermission}"</div>
+    }
+    if (isUnauthenticatedConvexError(error)) {
+      return <div>Unauthorized :(</div>
     }
     return <div>Failed to load task list. Try to login</div>
   }
@@ -39,7 +40,7 @@ export const TodoListSection = () => {
     <TodoList tasks={tasks}
               setStatus={setStatus}
               addTask={addTask}
-              canEdit={canEdit}
+              canEdit={canEdit || true}
               deleteTask={removeTask}
     />
   )

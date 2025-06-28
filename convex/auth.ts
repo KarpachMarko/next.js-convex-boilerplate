@@ -1,10 +1,9 @@
-import { mutation, MutationCtx, query, QueryCtx } from './_generated/server'
-import { ConvexError, v, Validator } from 'convex/values'
-import { ProfileWithPermissions } from '@/types/profileModel'
-import { api } from '@/convex/_generated/api'
-import {
-  UnauthorizedPermissionErrorOptions,
-} from '@/types/errors/unauthorizedPermissionErrorOptions'
+import { mutation, MutationCtx, query, QueryCtx } from "./_generated/server"
+import { v, Validator } from "convex/values"
+import { ProfileWithPermissions } from "@/types/profileModel"
+import { api } from "@/convex/_generated/api"
+import { UnauthorizedPermissionConvexError, } from "@/types/errors/unauthorizedPermissionError"
+import { UnauthenticatedConvexError } from "@/types/errors/unauthenticatedError"
 
 type AuthenticatedQueryCtx = QueryCtx & { profile: ProfileWithPermissions };
 type AuthenticatedMutationCtx = MutationCtx & {
@@ -14,48 +13,40 @@ type AuthenticatedMutationCtx = MutationCtx & {
 export const authedQuery = <
   ArgsValidator extends Record<string, Validator<any, any, any>>,
   Output
-> (queryDef: {
+>(queryDef: {
   args: ArgsValidator;
   handler: (
     ctx: AuthenticatedQueryCtx,
     args: {
-      [Property in keyof ArgsValidator]: ArgsValidator[Property]['type'];
+      [Property in keyof ArgsValidator]: ArgsValidator[Property]["type"];
     },
   ) => Promise<Output>;
 }, withPermission?: string) => {
   return query({
     args: {
-      profileId: v.optional(v.id('profiles')),
+      profileId: v.optional(v.id("profiles")),
       ...queryDef.args,
     },
     handler: async (ctx: QueryCtx, allArgs) => {
       const { profileId, ...args } = allArgs
 
       if (profileId == null) {
-        throw new ConvexError({
-          message: `Profile id not provided`,
-          code: 'UNAUTHORIZED',
-        })
+        throw new UnauthenticatedConvexError()
       }
 
       let profile = await ctx.runQuery(
         api.profile.getProfileWithPermissionsById, { id: profileId })
 
       if (!profile) {
-        throw new ConvexError({
-          message: `Profile not found with ID: ${profileId}`,
-          code: 'PROFILE_NOT_FOUND',
-        })
+        throw new UnauthenticatedConvexError()
       }
 
       if (withPermission != null &&
         !profile?.permissions?.some(p => p.slug === withPermission)) {
-        throw new ConvexError<UnauthorizedPermissionErrorOptions>({
-          resource: 'todo-tasks',
-          action: 'read',
+        throw new UnauthorizedPermissionConvexError({
           profileId: profileId,
           requiredPermission: withPermission,
-          userPermissions: profile.permissions.map(p => p.slug),
+          profilePermissions: profile.permissions.map(p => p.slug),
         })
       }
 
@@ -74,48 +65,40 @@ export const authedQuery = <
 export const authedMutation = <
   ArgsValidator extends Record<string, Validator<any, any, any>>,
   Output
-> (mutationDef: {
+>(mutationDef: {
   args: ArgsValidator;
   handler: (
     ctx: AuthenticatedMutationCtx,
     args: {
-      [Property in keyof ArgsValidator]: ArgsValidator[Property]['type'];
+      [Property in keyof ArgsValidator]: ArgsValidator[Property]["type"];
     },
   ) => Promise<Output>;
 }, withPermission?: string) => {
   return mutation({
     args: {
-      profileId: v.optional(v.id('profiles')),
+      profileId: v.optional(v.id("profiles")),
       ...mutationDef.args,
     },
     handler: async (ctx: MutationCtx, allArgs) => {
       const { profileId, ...args } = allArgs
 
       if (profileId == null) {
-        throw new ConvexError({
-          message: `Profile id not provided`,
-          code: 'UNAUTHORIZED',
-        })
+        throw new UnauthenticatedConvexError()
       }
 
       let profile = await ctx.runQuery(
         api.profile.getProfileWithPermissionsById, { id: profileId })
 
       if (!profile) {
-        throw new ConvexError({
-          message: `Profile not found with ID: ${profileId}`,
-          code: 'PROFILE_NOT_FOUND',
-        })
+        throw new UnauthenticatedConvexError()
       }
 
       if (withPermission != null &&
         !profile?.permissions?.some(p => p.slug === withPermission)) {
-        throw new ConvexError<UnauthorizedPermissionErrorOptions>({
-          resource: 'todo-tasks',
-          action: 'write',
+        throw new UnauthorizedPermissionConvexError({
           profileId: profileId,
           requiredPermission: withPermission,
-          userPermissions: profile.permissions.map(p => p.slug),
+          profilePermissions: profile.permissions.map(p => p.slug),
         })
       }
 

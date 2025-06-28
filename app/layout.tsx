@@ -5,6 +5,7 @@ import { ConvexClientProvider } from "@/components/convex-client-provider"
 import { AuthKitProvider } from "@workos-inc/authkit-nextjs/components"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ProfileProvider } from "@/components/profile-provider"
+import { Toaster } from "sonner"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,6 +46,7 @@ export default function RootLayout({
         </ConvexClientProvider>
       </AuthKitProvider>
     </ThemeProvider>
+    <Toaster position={"top-center"} closeButton={true}/>
     </body>
     </html>
   )

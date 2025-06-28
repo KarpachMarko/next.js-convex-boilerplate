@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ConvexMutationResult } from "@/hooks/useConvexMutation"
-import { ConvexError } from "convex/values"
 import { AnyFieldApi, useForm } from "@tanstack/react-form"
 import { Loader2Icon } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { isUnauthorizedPermissionConvexError } from "@/types/errors/unauthorizedPermissionError"
+import { toast } from "sonner"
+import { isUnauthenticatedConvexError } from "@/types/errors/unauthenticatedError"
 
 function FieldInfo({ field }: { field: AnyFieldApi }) {
   return (
@@ -29,10 +31,10 @@ export function TodoList(props: {
   addTask: ({ task }: {
     task: TaskRegistrationRequest
   }) => Promise<ConvexMutationResult<Task>>,
-  setStatus: ({}: { id: Id<"tasks">, isCompleted: boolean }) => void,
+  setStatus: ({}: { id: Id<"tasks">, isCompleted: boolean }) => Promise<ConvexMutationResult<void>>,
   deleteTask: ({}: {
     id: Id<"tasks">
-  }) => void,
+  }) => Promise<ConvexMutationResult<void>>,
 }) {
 
   const form = useForm({
@@ -44,14 +46,20 @@ export function TodoList(props: {
       const { error } = await props.addTask({ task: taskRequest })
 
       if (error) {
-        if (error instanceof ConvexError) {
-          const requiredPermission = error.data?.requiredPermission
-          if (requiredPermission != null) {
-            alert(`You do not have required permission: ${requiredPermission}`)
-            return
-          }
+        const defaultErrorMessage = "Failed to add task"
+        if (isUnauthenticatedConvexError(error)) {
+          toast(defaultErrorMessage, {
+            description: "Unauthenticated"
+          })
+          return
         }
-        alert("Failed to add task")
+        if (isUnauthorizedPermissionConvexError(error)) {
+          toast(defaultErrorMessage, {
+            description: <p>You do not have required permission: <strong>{error.data.requiredPermission}</strong></p>
+          })
+          return
+        }
+        toast(defaultErrorMessage)
       } else {
         formApi.state.values.taskText = ""
       }
@@ -71,11 +79,26 @@ export function TodoList(props: {
               <Checkbox
                 disabled={!props.canEdit}
                 checked={isCompleted}
-                onCheckedChange={(checked) => {
-                  const newStatus = typeof checked === "boolean"
-                    ? checked
-                    : true
-                  return props.setStatus({ id: _id, isCompleted: newStatus })
+                onCheckedChange={async (checked) => {
+                  const newStatus = checked === "indeterminate" ? true : checked
+                  const { error } = await props.setStatus({ id: _id, isCompleted: newStatus })
+                  if (error) {
+                    const defaultErrorMessage = "Failed change status"
+                    if (isUnauthenticatedConvexError(error)) {
+                      toast(defaultErrorMessage, {
+                        description: "Unauthenticated"
+                      })
+                      return
+                    }
+                    if (isUnauthorizedPermissionConvexError(error)) {
+                      toast(defaultErrorMessage, {
+                        description: <p>You do not have required
+                          permission: <strong>{error.data.requiredPermission}</strong></p>
+                      })
+                      return
+                    }
+                    toast(defaultErrorMessage)
+                  }
                 }}
               />
             </TableCell>
@@ -83,8 +106,26 @@ export function TodoList(props: {
               {props.canEdit ?
                 <Button disabled={!props.canEdit} variant="destructive"
                         size="sm" className="cursor-pointer text-xs"
-                        onClick={() => props.deleteTask(
-                          { id: _id })}>Delete</Button> : <></>}
+                        onClick={async () => {
+                          const { error } = await props.deleteTask({ id: _id })
+                          if (error) {
+                            const defaultErrorMessage = "Failed delete task"
+                            if (isUnauthenticatedConvexError(error)) {
+                              toast(defaultErrorMessage, {
+                                description: "Unauthenticated"
+                              })
+                              return
+                            }
+                            if (isUnauthorizedPermissionConvexError(error)) {
+                              toast(defaultErrorMessage, {
+                                description: <p>You do not have required
+                                  permission: <strong>{error.data.requiredPermission}</strong></p>
+                              })
+                              return
+                            }
+                            toast(defaultErrorMessage)
+                          }
+                        }}>Delete</Button> : <></>}
             </TableCell>
           </TableRow>,
         )}
