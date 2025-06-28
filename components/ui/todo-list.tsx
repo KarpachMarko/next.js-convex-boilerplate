@@ -13,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { isUnauthorizedPermissionConvexError } from "@/types/errors/unauthorizedPermissionError"
 import { toast } from "sonner"
 import { isUnauthenticatedConvexError } from "@/types/errors/unauthenticatedError"
+import { isValidationError } from "@/types/errors/validationError"
 
 function FieldInfo({ field }: { field: AnyFieldApi }) {
   return (
@@ -47,6 +48,14 @@ export function TodoList(props: {
 
       if (error) {
         const defaultErrorMessage = "Failed to add task"
+        if (isValidationError(error)) {
+          error.data.errors.forEach(err => {
+            if (err.field === "text") {
+              formApi.setFieldMeta("taskText", meta => ({ ...meta, errorMap: { "onServer": err.message } }))
+            }
+          })
+          return
+        }
         if (isUnauthenticatedConvexError(error)) {
           toast(defaultErrorMessage, {
             description: "Unauthenticated"
@@ -61,7 +70,7 @@ export function TodoList(props: {
         }
         toast(defaultErrorMessage)
       } else {
-        formApi.state.values.taskText = ""
+        formApi.setFieldValue("taskText", "")
       }
     }
   })
@@ -147,7 +156,7 @@ export function TodoList(props: {
                 : undefined,
           onBlurAsyncDebounceMs: 500,
         }}
-        children={field => <div className={"w-full flex flex-col"}>
+        children={(field) => <div className={"w-full flex flex-col"}>
           <Tooltip>
             <TooltipTrigger asChild>
               <Input type="text"
