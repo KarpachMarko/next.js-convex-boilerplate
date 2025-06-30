@@ -8,13 +8,16 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Loader2Icon } from "lucide-react"
 import { toast } from "sonner"
 import { useAppForm } from "@/form/form-context"
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { addTask, deleteTask, setStatus } from "@/app/tasks/actions"
 import { isUnauthenticatedConvexError } from "@/types/errors/unauthenticatedError"
 import { isUnauthorizedPermissionConvexError } from "@/types/errors/unauthorizedPermissionError"
 import { isSerializedConvexError, toConvexError } from "@/lib/error-utils"
 import { FieldValidationError, isValidationError } from "@/types/errors/validationError"
 import { z } from "zod"
+import { useConvexQuery } from "@/hooks/useConvexQuery"
+import { useProfile } from "@/components/profile-provider"
+import { api } from "@/convex/_generated/api"
 
 function handleError(error: any, defaultErrorMessage: string) {
   if (isSerializedConvexError(error)) {
@@ -91,9 +94,12 @@ function TodoListRow({ rowNum, task, canEdit }: {
 }
 
 export function TodoList(props: {
-  tasks: Task[],
+  initialTasks: Task[],
   canEdit: boolean,
 }) {
+
+  const { profile } = useProfile()
+  const { data: tasks, isLoading, error } = useConvexQuery(api.tasks.get, profile ? { profileId: profile._id } : "skip")
 
   const handleSubmit = useCallback(async (
     taskText: string,
@@ -121,6 +127,12 @@ export function TodoList(props: {
     taskText: z.string().min(3, "Task text should be at least 3 characters long")
   })
 
+  useEffect(() => {
+    if (error) {
+      toast("Failed to update tasks")
+    }
+  }, [error])
+
   const form = useAppForm({
     defaultValues: {
       taskText: "",
@@ -142,7 +154,7 @@ export function TodoList(props: {
   return <div>
     <Table>
       <TableBody>
-        {props.tasks?.map(({ _id, text, isCompleted }, i) =>
+        {(isLoading ? props.initialTasks : tasks)?.map(({ _id, text, isCompleted }, i) =>
           <TodoListRow key={_id}
                        rowNum={i + 1}
                        task={{ _id, text, isCompleted }}

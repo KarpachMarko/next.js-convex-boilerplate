@@ -38,7 +38,7 @@ export async function TodoListSection() {
 
     return (<div>
         <h1 className="text-xl font-bold pb-4">Task list</h1>
-        <TodoList tasks={tasks}
+        <TodoList initialTasks={tasks}
                   canEdit={canEdit}
         />
       </div>
