@@ -150,7 +150,6 @@ export function TodoList(props: {
   })
 
   return <div>
-    <h1 className="text-xl font-bold pb-4">Tasks TODO</h1>
     <Table>
       <TableBody>
         {props.tasks?.map(({ _id, text, isCompleted }, i) =>

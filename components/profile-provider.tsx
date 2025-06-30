@@ -17,7 +17,7 @@ const ProfileContext = createContext<ProfileContextType | undefined>(undefined)
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [isLoadingUser, setIsLoadingUser] = useState(true) // State to track user loading
+  const [isLoadingUser, setIsLoadingUser] = useState(true)
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -31,7 +31,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         setIsLoadingUser(false)
       }
     }
-    fetchUser()
+    void fetchUser()
   }, [])
 
   const profile = useQuery(
