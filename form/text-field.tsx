@@ -7,7 +7,7 @@ function FieldInfo({ field }: { field: AnyFieldApi }) {
   return (
     <>
       {field.state.meta.isTouched && !field.state.meta.isValid ? (
-        <em>{field.state.meta.errors.join(", ")}</em>
+        <em>{field.state.meta.errors.map(e => e?.message ?? e)}</em>
       ) : null}
     </>
   )

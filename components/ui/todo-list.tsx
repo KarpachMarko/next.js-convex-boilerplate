@@ -14,6 +14,7 @@ import { isUnauthenticatedConvexError } from "@/types/errors/unauthenticatedErro
 import { isUnauthorizedPermissionConvexError } from "@/types/errors/unauthorizedPermissionError"
 import { isSerializedConvexError, toConvexError } from "@/lib/error-utils"
 import { FieldValidationError, isValidationError } from "@/types/errors/validationError"
+import { z } from "zod"
 
 function handleError(error: any, defaultErrorMessage: string) {
   if (isSerializedConvexError(error)) {
@@ -116,9 +117,16 @@ export function TodoList(props: {
     handleError(error, "Failed to add task")
   }, [])
 
+  const taskRequestSchema = z.object({
+    taskText: z.string().min(3, "Task text should be at least 3 characters long")
+  })
+
   const form = useAppForm({
     defaultValues: {
       taskText: "",
+    },
+    validators: {
+      onChange: taskRequestSchema
     },
     onSubmit: async ({
       value,
@@ -151,14 +159,6 @@ export function TodoList(props: {
       }} className="flex gap-2 mt-2 items-end">
         <form.AppField
           name="taskText"
-          validators={{
-            onChange: ({ value }) =>
-              !value ? "Task text id required"
-                : value.length < 3
-                  ? "Task text should be at leat 3 characters long"
-                  : undefined,
-            onBlurAsyncDebounceMs: 500,
-          }}
           children={(field) => <field.TextField className={"w-full"} label={"Task text"}/>}
         />
         <form.SubmitButton label={"Add task"}/>
