@@ -12,6 +12,6 @@ export type FailedResult = {
   error: Error;
 }
 
-export type ActionResult<T> = Result<T> & {
+export type ActionResult<T> = Omit<Result<T>, "error"> & {
   error: SerializedError | null;
 }
