@@ -60,7 +60,7 @@ export const TodoListSection = () => {
           : <TodoList tasks={tasks}
                       setStatus={setStatus}
                       addTask={addTask}
-                      canEdit={canEdit || true}
+                      canEdit={canEdit}
                       deleteTask={removeTask}
           />}
     </div>
