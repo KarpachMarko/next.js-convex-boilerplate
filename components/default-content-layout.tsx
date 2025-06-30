@@ -1,9 +1,10 @@
 import Header from "@/components/ui/header"
+import { ReactNode } from "react"
 
 export default function DefaultLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
   return (
     <div

@@ -1,15 +1,8 @@
 import { OptionalRestArgsOrSkip, useQuery } from "convex/react"
 import { FunctionReference } from "convex/server"
+import { Result } from "@/types/Result"
 
-type ConvexErrorResult<T> = {
-  data: null;
-  error: Error;
-  isLoading: boolean;
-};
-
-type ConvexSuccessResult<T> = {
-  data: T;
-  error: null;
+type ConvexQueryResult<T> = Result<T> & {
   isLoading: boolean;
 };
 
@@ -19,7 +12,7 @@ export function useConvexQuery<
 >(
   query: Query,
   ...args: Args
-): ConvexSuccessResult<Query["_returnType"]> | ConvexErrorResult<Query["_returnType"]> {
+): ConvexQueryResult<Query["_returnType"]> {
   try {
     const result = useQuery(query, ...args)
 

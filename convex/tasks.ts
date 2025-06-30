@@ -3,7 +3,7 @@ import { Task } from "@/types/taskModel"
 import { authedMutation, authedQuery } from "@/convex/auth"
 import { ValidationConvexError } from "@/types/errors/validationError"
 
-export const get = authedQuery({ 
+export const get = authedQuery({
   args: {},
   handler: async (ctx) => {
     let res = await ctx.db.query("tasks").collect()
@@ -21,7 +21,7 @@ export const insert = authedMutation({
   handler: async (ctx, args) => {
     if (args.task.text.trim().length < 3) {
       throw new ValidationConvexError({
-        errors: [{ field: "text", message: "Task text should be at least 3 characters from convex" }],
+        errors: [{ field: "text", message: "Task text should be at least 3 characters" }],
       })
     }
 

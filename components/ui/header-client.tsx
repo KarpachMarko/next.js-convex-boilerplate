@@ -3,17 +3,16 @@
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
-import { useProfile } from "@/components/profile-provider"
+import { logout } from "@/app/auth/logout"
+import { User } from "@workos-inc/node"
 
 interface HeaderClientProps {
+  user: User | null
   signInUrl: string;
   signUpUrl: string;
-  logout: () => Promise<void>;
 }
 
-export default function HeaderClient({ signInUrl, signUpUrl, logout }: HeaderClientProps) {
-  const { user, profile, isLoading } = useProfile()
-
+export default function HeaderClient({ user, signInUrl, signUpUrl }: HeaderClientProps) {
   return (
     <header className="flex items-center justify-between w-full gap-5">
       <div className="flex items-center gap-2">
@@ -26,7 +25,7 @@ export default function HeaderClient({ signInUrl, signUpUrl, logout }: HeaderCli
         {user ?
           <>
             <p>Welcome back, {user.firstName}</p>
-            <Button onClick={logout} className="cursor-pointer">Logout</Button>
+            <Button onClick={() => logout()} className="cursor-pointer">Logout</Button>
           </>
           : <>
             <Link href={signUpUrl}><Button className="cursor-pointer">Register</Button></Link>

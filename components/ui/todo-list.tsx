@@ -1,75 +1,65 @@
 "use client"
 
-import { Task, TaskRegistrationRequest } from "@/types/taskModel"
+import { Task } from "@/types/taskModel"
 import { Id } from "@/convex/_generated/dataModel"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ConvexMutationResult } from "@/hooks/useConvexMutation"
 import { Loader2Icon } from "lucide-react"
-import { isUnauthorizedPermissionConvexError } from "@/types/errors/unauthorizedPermissionError"
 import { toast } from "sonner"
-import { isUnauthenticatedConvexError } from "@/types/errors/unauthenticatedError"
-import { isValidationError } from "@/types/errors/validationError"
 import { useAppForm } from "@/form/form-context"
 import { useCallback, useState } from "react"
+import { addTask, deleteTask, setStatus } from "@/app/tasks/actions"
+import { isUnauthenticatedConvexError } from "@/types/errors/unauthenticatedError"
+import { isUnauthorizedPermissionConvexError } from "@/types/errors/unauthorizedPermissionError"
+import { isSerializedConvexError, toConvexError } from "@/lib/error-utils"
+import { FieldValidationError, isValidationError } from "@/types/errors/validationError"
 
-function TodoListRow({ rowNum, task, canEdit, setStatus, deleteTask }: {
+function handleError(error: any, defaultErrorMessage: string) {
+  if (isSerializedConvexError(error)) {
+    handleError(toConvexError(error), defaultErrorMessage)
+    return
+  }
+  if (isUnauthenticatedConvexError(error)) {
+    toast(defaultErrorMessage, {
+      description: "Unauthenticated"
+    })
+    return
+  }
+  if (isUnauthorizedPermissionConvexError(error)) {
+    toast(defaultErrorMessage, {
+      description: <p>You do not have required
+        permission: <strong>{error.data.requiredPermission}</strong></p>
+    })
+    return
+  }
+  toast(defaultErrorMessage)
+}
+
+function TodoListRow({ rowNum, task, canEdit }: {
   rowNum: number,
   task: Task,
   canEdit: boolean,
-  setStatus: ({}: { id: Id<"tasks">, isCompleted: boolean }) => Promise<ConvexMutationResult<void>>,
-  deleteTask: ({}: {
-    id: Id<"tasks">
-  }) => Promise<ConvexMutationResult<void>>
 }) {
   const [changeStatusLoading, setChangeStatusLoading] = useState(false)
   const runChangeStatus = useCallback(async (id: Id<"tasks">, isCompleted: boolean) => {
     setChangeStatusLoading(true)
     const { error } = await setStatus({ id, isCompleted })
-    setChangeStatusLoading(false)
     if (error) {
-      const defaultErrorMessage = "Failed change status"
-      if (isUnauthenticatedConvexError(error)) {
-        toast(defaultErrorMessage, {
-          description: "Unauthenticated"
-        })
-        return
-      }
-      if (isUnauthorizedPermissionConvexError(error)) {
-        toast(defaultErrorMessage, {
-          description: <p>You do not have required
-            permission: <strong>{error.data.requiredPermission}</strong></p>
-        })
-        return
-      }
-      toast(defaultErrorMessage)
+      handleError(error, "Failed to change status")
     }
-  }, [setStatus, setChangeStatusLoading])
+    setChangeStatusLoading(false)
+  }, [setChangeStatusLoading])
 
   const [deleteLoading, setDeleteLoading] = useState(false)
   const runDeleteTask = useCallback(async (id: Id<"tasks">) => {
     setDeleteLoading(true)
     const { error } = await deleteTask({ id })
-    setDeleteLoading(false)
     if (error) {
-      const defaultErrorMessage = "Failed delete task"
-      if (isUnauthenticatedConvexError(error)) {
-        toast(defaultErrorMessage, {
-          description: "Unauthenticated"
-        })
-        return
-      }
-      if (isUnauthorizedPermissionConvexError(error)) {
-        toast(defaultErrorMessage, {
-          description: <p>You do not have required
-            permission: <strong>{error.data.requiredPermission}</strong></p>
-        })
-        return
-      }
-      toast(defaultErrorMessage)
+      handleError(error, "Failed delete task")
     }
-  }, [deleteTask, setDeleteLoading])
+    setDeleteLoading(false)
+  }, [setDeleteLoading])
 
   return (
     <TableRow>
@@ -90,10 +80,9 @@ function TodoListRow({ rowNum, task, canEdit, setStatus, deleteTask }: {
       <TableCell>
         {canEdit ?
           <Button disabled={!canEdit} variant="destructive"
-                  size="sm" className="cursor-pointer text-xs flex items-center"
+                  size="sm" className="cursor-pointer text-xs flex items-center w-full"
                   onClick={() => runDeleteTask(task._id)}>
-            {deleteLoading ? <Loader2Icon className={"animate-spin"}/> : null}
-            Delete
+            {deleteLoading ? <Loader2Icon className={"animate-spin"}/> : <span>Delete</span>}
           </Button> : null}
       </TableCell>
     </TableRow>
@@ -103,50 +92,43 @@ function TodoListRow({ rowNum, task, canEdit, setStatus, deleteTask }: {
 export function TodoList(props: {
   tasks: Task[],
   canEdit: boolean,
-  addTask: ({ task }: {
-    task: TaskRegistrationRequest
-  }) => Promise<ConvexMutationResult<Task>>,
-  setStatus: ({}: { id: Id<"tasks">, isCompleted: boolean }) => Promise<ConvexMutationResult<void>>,
-  deleteTask: ({}: {
-    id: Id<"tasks">
-  }) => Promise<ConvexMutationResult<void>>,
 }) {
+
+  const handleSubmit = useCallback(async (
+    taskText: string,
+    handleValidationError: (error: FieldValidationError) => void,
+    onSuccess: () => void) => {
+    const taskRequest = { text: taskText, isCompleted: false }
+    const { error } = await addTask({ task: taskRequest })
+    if (!error) {
+      onSuccess()
+      return
+    }
+
+    if (isSerializedConvexError(error)) {
+      const convexError = toConvexError(error)
+      if (isValidationError(convexError)) {
+        convexError.data.errors.forEach(handleValidationError)
+      }
+      return
+    }
+
+    handleError(error, "Failed to add task")
+  }, [])
 
   const form = useAppForm({
     defaultValues: {
       taskText: "",
     },
-    onSubmit: async ({ value, formApi }) => {
-      const taskRequest = { text: value.taskText, isCompleted: false }
-      const { error } = await props.addTask({ task: taskRequest })
-
-      if (error) {
-        const defaultErrorMessage = "Failed to add task"
-        if (isValidationError(error)) {
-          error.data.errors.forEach(err => {
-            if (err.field === "text") {
-              formApi.setFieldMeta("taskText", meta => ({ ...meta, errorMap: { "onServer": err.message } }))
-            }
-          })
-          return
+    onSubmit: async ({
+      value,
+      formApi
+    }) => handleSubmit(value.taskText, (err) => {
+        if (err.field === "text") {
+          formApi.setFieldMeta("taskText", meta => ({ ...meta, errorMap: { "onServer": err.message } }))
         }
-        if (isUnauthenticatedConvexError(error)) {
-          toast(defaultErrorMessage, {
-            description: "Unauthenticated"
-          })
-          return
-        }
-        if (isUnauthorizedPermissionConvexError(error)) {
-          toast(defaultErrorMessage, {
-            description: <p>You do not have required permission: <strong>{error.data.requiredPermission}</strong></p>
-          })
-          return
-        }
-        toast(defaultErrorMessage)
-      } else {
-        formApi.setFieldValue("taskText", "")
-      }
-    }
+      },
+      () => formApi.setFieldValue("taskText", ""))
   })
 
   return <div>
@@ -156,9 +138,7 @@ export function TodoList(props: {
           <TodoListRow key={_id}
                        rowNum={i + 1}
                        task={{ _id, text, isCompleted }}
-                       canEdit={props.canEdit}
-                       setStatus={props.setStatus}
-                       deleteTask={props.deleteTask}/>
+                       canEdit={props.canEdit}/>
         )}
       </TableBody>
     </Table>

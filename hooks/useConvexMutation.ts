@@ -1,13 +1,9 @@
 import { useMutation } from "convex/react"
 import { FunctionReference, OptionalRestArgs } from "convex/server"
 import { useCallback } from "react"
+import { Result } from "@/types/Result"
 
-export type ConvexMutationResult<T> = {
-  data: T | null;
-  error: Error | null;
-};
-
-export type ConvexMutationReturn<T> = (...args: any[]) => Promise<ConvexMutationResult<T>>;
+export type ConvexMutationReturn<T> = (...args: any[]) => Promise<Result<T>>;
 
 export function useConvexMutation<
   Mutation extends FunctionReference<"mutation">,
