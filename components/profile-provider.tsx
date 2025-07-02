@@ -1,9 +1,9 @@
 "use client"
 
-import { withAuth } from "@workos-inc/authkit-nextjs"
+import { useAuth } from "@workos-inc/authkit-nextjs/components"
 import { api } from "@/convex/_generated/api"
 import { useQuery } from "convex/react"
-import { createContext, ReactNode, useContext, useEffect, useState } from "react"
+import { createContext, ReactNode, useContext } from "react"
 import { ProfileWithPermissions } from "@/types/profileModel"
 import { User } from "@workos-inc/node"
 
@@ -16,30 +16,14 @@ interface ProfileContextType {
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined)
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoadingUser, setIsLoadingUser] = useState(true)
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const { user: workosUser } = await withAuth()
-        setUser(workosUser)
-      } catch (error) {
-        console.error("Error fetching WorkOS user:", error)
-        setUser(null)
-      } finally {
-        setIsLoadingUser(false)
-      }
-    }
-    void fetchUser()
-  }, [])
+  const { user, loading: isLoadingUser } = useAuth()
 
   const profile = useQuery(
     api.profile.getProfileWithPermissionsByUserId,
     user ? { userId: user.id } : "skip"
   )
 
-  const isLoadingProfile = user && profile === undefined && !isLoadingUser
+  const isLoadingProfile = user && profile === undefined
 
   const contextValue = {
     profile: profile ?? null,
